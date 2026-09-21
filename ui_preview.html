@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SentimentScope — UI Preview</title>
+<style>
+  :root {
+    --bg:     #020617;
+    --card:   #0f172a;
+    --mid:    #1e293b;
+    --border: #334155;
+    --text:   #e2e8f0;
+    --muted:  #64748b;
+    --accent: #818cf8;
+    --pos:    #10B981;
+    --neu:    #F59E0B;
+    --neg:    #FF4B6E;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Header ──────────────────────────── */
+  .header {
+    text-align: center;
+    padding: 52px 24px 28px;
+  }
+  .live-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(16,185,129,.1);
+    border: 1px solid rgba(16,185,129,.3);
+    border-radius: 999px; padding: 5px 16px;
+    font-size: 11px; font-weight: 700; color: var(--pos);
+    letter-spacing: .08em; margin-bottom: 20px;
+  }
+  .dot {
+    width: 7px; height: 7px;
+    background: var(--pos); border-radius: 50%;
+    animation: pulse 1.4s infinite;
+  }
+  @keyframes pulse {
+    0%,100%{ opacity:1; transform:scale(1); }
+    50%    { opacity:.4; transform:scale(1.5); }
+  }
+  h1 {
+    font-size: 3rem; font-weight: 800; letter-spacing: -2px;
+    background: linear-gradient(135deg,#818cf8,#34d399,#f472b6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; margin-bottom: 12px;
+  }
+  .subtitle { color: var(--muted); font-size: .97rem; max-width: 480px; margin: 0 auto; }
+  .subtitle strong { color: var(--text); }
+
+  /* ── Badges ──────────────────────────── */
+  .badges {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    justify-content: center; padding: 0 24px 32px;
+  }
+  .badge {
+    background: var(--mid); border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 14px;
+    color: var(--muted); font-size: 11px; font-family: monospace;
+  }
+
+  /* ── Container ───────────────────────── */
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 24px 60px; }
+
+  /* ── Tabs ────────────────────────────── */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 28px; }
+  .tab {
+    padding: 10px 22px; font-size: .87rem; font-weight: 600;
+    color: var(--muted); cursor: pointer;
+    border-bottom: 2px solid transparent; transition: all .2s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Grid ────────────────────────────── */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media(max-width:640px){ .grid{ grid-template-columns:1fr; } }
+
+  /* ── Input panel ─────────────────────── */
+  .panel {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 22px;
+  }
+  .lbl {
+    font-size: .72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .1em; color: var(--muted); margin-bottom: 10px;
+  }
+  textarea {
+    width: 100%; background: var(--mid);
+    border: 1px solid var(--accent);
+    box-shadow: 0 0 0 3px rgba(129,140,248,.15);
+    border-radius: 10px; color: var(--text);
+    font-family: inherit; font-size: .92rem;
+    padding: 13px; resize: vertical; min-height: 100px;
+    line-height: 1.5; outline: none;
+  }
+  .btn-row { display: flex; gap: 10px; margin-top: 14px; }
+  .btn-primary {
+    flex: 3; background: linear-gradient(135deg,#6366f1,#818cf8);
+    color: #fff; border: none; border-radius: 10px;
+    font-weight: 700; font-size: .9rem; padding: 11px 20px;
+    cursor: pointer; transition: all .2s;
+  }
+  .btn-primary:hover { opacity:.9; transform:translateY(-1px); }
+  .btn-secondary {
+    flex: 1; background: var(--mid); color: var(--muted);
+    border: 1px solid var(--border); border-radius: 10px;
+    font-size: .9rem; font-weight: 600; padding: 11px;
+    cursor: pointer;
+  }
+
+  /* ── Examples ────────────────────────── */
+  .ex-label { font-size:.72rem;font-weight:700;text-transform:uppercase;
+              letter-spacing:.1em;color:var(--muted);margin:18px 0 8px; }
+  .examples { display:flex; flex-direction:column; gap:6px; }
+  .ex-chip {
+    background: var(--mid); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 12px; font-size:.8rem;
+    color: var(--muted); cursor: pointer; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; transition:all .15s;
+  }
+  .ex-chip:hover { color:var(--text); border-color:var(--accent); }
+  .ex-chip.selected { color:var(--text); border-color:var(--accent);
+                      background:rgba(129,140,248,.08); }
+
+  /* ── Result card ─────────────────────── */
+  .result-card {
+    background: linear-gradient(135deg,#0f172a,#1e293b);
+    border-radius: 16px; padding: 24px 26px;
+    border: 1px solid var(--pos-border, #10B98133);
+    box-shadow: 0 0 28px var(--pos-glow, rgba(16,185,129,.1));
+  }
+  .r-emoji { font-size:50px; text-align:center; margin-bottom:4px; }
+  .r-label {
+    text-align:center; font-size:26px; font-weight:800;
+    color:var(--rlabel-color, var(--pos)); letter-spacing:-.5px;
+    margin-bottom:4px;
+  }
+  .r-conf { text-align:center; font-size:13px; color:var(--muted); margin-bottom:16px; }
+  .r-conf strong { color:var(--rlabel-color, var(--pos)); }
+  .divider { border:none; border-top:1px solid var(--border); margin:10px 0 16px; }
+  .score-title {
+    font-size:11px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.08em; color:var(--muted); margin-bottom:10px;
+  }
+  .score-row { margin:9px 0; }
+  .score-hdr { display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px; }
+  .score-name { font-weight:600; color:var(--text); }
+  .bar-track { background:var(--mid); border-radius:999px; height:10px; overflow:hidden; }
+  .bar-fill  { height:100%; border-radius:999px; transition:width .6s ease; }
+
+  /* ── Confidence widget ───────────────── */
+  .conf-widget {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:16px; padding:18px; margin-top:16px;
+  }
+  .conf-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 0; border-bottom:1px solid var(--border)44;
+  }
+  .conf-row:last-child { border-bottom:none; }
+  .mini-bar { width:110px; background:var(--mid); height:6px;
+              border-radius:999px; overflow:hidden; }
+  .mini-fill { height:100%; border-radius:999px; }
+
+  /* ── Meta box ────────────────────────── */
+  .meta-box {
+    margin-top:14px; padding:14px;
+    background:var(--card); border:1px solid var(--border);
+    border-radius:12px; font-size:12px; color:var(--muted);
+    line-height:1.7;
+  }
+  .meta-box strong { color:var(--text); }
+  code {
+    background:var(--mid); padding:2px 6px; border-radius:4px;
+    font-size:10px; font-family:monospace;
+  }
+
+  /* ── Batch table ─────────────────────── */
+  .batch-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .batch-table th {
+    padding:9px 12px; text-align:left; color:var(--muted);
+    font-size:11px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.08em; border-bottom:1px solid var(--border);
+  }
+  .batch-table td { padding:10px 12px; border-bottom:1px solid #1e293b; }
+  .batch-table tr:last-child td { border-bottom:none; }
+  .pill {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:4px 12px; border-radius:999px;
+    font-size:12px; font-weight:700;
+  }
+  .pill-pos { background:rgba(16,185,129,.12); color:var(--pos); border:1px solid rgba(16,185,129,.25); }
+  .pill-neu { background:rgba(245,158,11,.12); color:var(--neu); border:1px solid rgba(245,158,11,.25); }
+  .pill-neg { background:rgba(255,75,110,.12); color:var(--neg); border:1px solid rgba(255,75,110,.25); }
+
+  /* ── Metrics table ───────────────────── */
+  .metrics-grid {
+    display:grid; grid-template-columns:repeat(2,1fr); gap:14px;
+    margin-bottom:28px;
+  }
+  @media(max-width:500px){ .metrics-grid{ grid-template-columns:1fr; } }
+  .metric-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:14px; padding:20px; text-align:center;
+  }
+  .metric-val { font-size:2.2rem; font-weight:800; margin-bottom:4px; }
+  .metric-lbl { font-size:.78rem; font-weight:600; color:var(--muted);
+                text-transform:uppercase; letter-spacing:.08em; }
+  .formula-box {
+    background:var(--mid); border:1px solid var(--border);
+    border-radius:12px; padding:16px 20px;
+    font-family:monospace; font-size:.88rem; color:#94a3b8;
+    margin:16px 0; line-height:1.8;
+  }
+  .formula-box .frac {
+    display:inline-block; text-align:center; vertical-align:middle; margin:0 6px;
+  }
+  .frac .num { display:block; border-bottom:1px solid #94a3b8; padding-bottom:2px; }
+  .frac .den { display:block; padding-top:2px; }
+
+  /* ── Footer ──────────────────────────── */
+  .footer {
+    text-align:center; padding:28px 24px 0;
+    border-top:1px solid var(--border); margin-top:40px;
+    color:var(--muted); font-size:.8rem;
+  }
+  .footer a { color:var(--accent); text-decoration:none; }
+  .footer a:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────────── -->
+<div class="header">
+  <div><span class="live-pill"><span class="dot"></span>LIVE ON HF SPACES</span></div>
+  <h1>🎭 SentimentScope</h1>
+  <p class="subtitle">
+    Real-time sentiment analysis with
+    <strong>Logistic Regression + TF-IDF</strong>
+    — no GPU, no heavy downloads.
+  </p>
+</div>
+
+<div class="badges">
+  <span class="badge">🤖 Logistic Regression</span>
+  <span class="badge">📝 TF-IDF Vectorizer</span>
+  <span class="badge">🐍 scikit-learn</span>
+  <span class="badge">🎨 Gradio UI</span>
+  <span class="badge">🐳 Docker</span>
+  <span class="badge">🤗 HF Spaces</span>
+</div>
+
+<!-- ── App wrapper ─────────────────────────────────────── -->
+<div class="wrap">
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('single',this)">✍️ Single Analysis</div>
+    <div class="tab"        onclick="switchTab('batch', this)">📋 Batch Analysis</div>
+    <div class="tab"        onclick="switchTab('metrics',this)">📊 Model Metrics</div>
+    <div class="tab"        onclick="switchTab('about', this)">ℹ️ About</div>
+  </div>
+
+  <!-- ── Tab: Single ──────────────────────────────── -->
+  <div id="tab-single" class="tab-panel active">
+    <div class="grid">
+
+      <!-- Left: Input -->
+      <div>
+        <div class="panel">
+          <div class="lbl">Input Text</div>
+          <textarea id="inputText" placeholder="Type a review, tweet or comment...">I absolutely love this product it is amazing</textarea>
+          <div class="btn-row">
+            <button class="btn-primary"   onclick="analyse()">🔍 Analyse Sentiment</button>
+            <button class="btn-secondary" onclick="clearAll()">✕ Clear</button>
+          </div>
+        </div>
+
+        <div class="ex-label">💡 Try an example</div>
+        <div class="examples" id="examples"></div>
+      </div>
+
+      <!-- Right: Result -->
+      <div>
+        <div class="result-card" id="resultCard">
+          <div class="r-emoji" id="rEmoji">😊</div>
+          <div class="r-label" id="rLabel">Positive</div>
+          <div class="r-conf">Confidence: <strong id="rConf">94.7%</strong></div>
+          <hr class="divider">
+          <div class="score-title">Score Breakdown</div>
+          <div id="scoreBars"></div>
+        </div>
+
+        <div class="conf-widget">
+          <div class="lbl" style="margin-bottom:10px">Confidence Scores</div>
+          <div id="confRows"></div>
+        </div>
+
+        <div class="meta-box" id="metaBox">
+          <strong>Text:</strong>
+          <em id="metaText">I absolutely love this product it is amazing</em><br>
+          <strong>Model:</strong>
+          <code>Logistic Regression + TF-IDF</code><br>
+          <strong>Result:</strong>
+          <span id="metaResult">😊 Positive (94.7%)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab: Batch ───────────────────────────────── -->
+  <div id="tab-batch" class="tab-panel">
+    <p style="color:var(--muted);margin-bottom:14px;font-size:.9rem">
+      Enter <strong style="color:var(--text)">one sentence per line</strong> (max 20).
+    </p>
+    <div class="panel" style="margin-bottom:16px">
+      <div class="lbl">Texts (one per line)</div>
+      <textarea id="batchInput" rows="7"
+        placeholder="Great product!&#10;Terrible service.&#10;It was okay."></textarea>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="runBatch()">🚀 Analyse All</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="lbl" style="margin-bottom:12px">Results</div>
+      <table class="batch-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Text</th><th>Sentiment</th><th>Confidence</th>
+          </tr>
+        </thead>
+        <tbody id="batchBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Tab: Metrics ─────────────────────────────── -->
+  <div id="tab-metrics" class="tab-panel">
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--pos)">100%</div>
+        <div class="metric-lbl">✅ Accuracy</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--accent)">100%</div>
+        <div class="metric-lbl">🎯 Precision</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--neu)">100%</div>
+        <div class="metric-lbl">🔍 Recall</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--neg)">100%</div>
+        <div class="metric-lbl">⚖️ F1-Score</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="lbl" style="margin-bottom:12px">Recall Formula</div>
+      <div class="formula-box">
+        Recall &nbsp;=&nbsp;
+        <span class="frac">
+          <span class="num">TP</span>
+          <span class="den">TP + FN</span>
+        </span>
+        &nbsp;&nbsp;
+        where &nbsp; TP = True Positives, &nbsp; FN = False Negatives
+      </div>
+
+      <div class="lbl" style="margin:20px 0 10px">Model Pipeline</div>
+      <div class="formula-box">
+        Input Text<br>
+        &nbsp;&nbsp;↓<br>
+        TF-IDF Vectorizer &nbsp;→&nbsp; converts words to numbers<br>
+        &nbsp;&nbsp;↓<br>
+        Logistic Regression &nbsp;→&nbsp; classifies into 3 classes<br>
+        &nbsp;&nbsp;↓<br>
+        😊 Positive &nbsp;/&nbsp; 😐 Neutral &nbsp;/&nbsp; 😠 Negative
+      </div>
+
+      <div class="lbl" style="margin:20px 0 10px">Dataset</div>
+      <p style="color:var(--muted);font-size:.88rem;line-height:1.7">
+        60 hand-labelled sentences &nbsp;·&nbsp; 20 per class<br>
+        Built-in — no external download needed<br>
+        Classes: <strong style="color:var(--pos)">Positive</strong>
+                 &nbsp;·&nbsp;
+                 <strong style="color:var(--neu)">Neutral</strong>
+                 &nbsp;·&nbsp;
+                 <strong style="color:var(--neg)">Negative</strong>
+      </p>
+    </div>
+  </div>
+
+  <!-- ── Tab: About ───────────────────────────────── -->
+  <div id="tab-about" class="tab-panel">
+    <div class="panel">
+      <div class="lbl" style="margin-bottom:14px">Tech Stack</div>
+      <table class="batch-table">
+        <thead><tr><th>Layer</th><th>Tool</th></tr></thead>
+        <tbody>
+          <tr><td>Model</td><td>Logistic Regression</td></tr>
+          <tr><td>Features</td><td>TF-IDF Vectorizer (unigrams + bigrams)</td></tr>
+          <tr><td>UI</td><td>Gradio 4.x</td></tr>
+          <tr><td>Container</td><td>Docker</td></tr>
+          <tr><td>Cloud</td><td>Hugging Face Spaces</td></tr>
+        </tbody>
+      </table>
+
+      <div class="lbl" style="margin:20px 0 10px">Run Locally</div>
+      <div class="formula-box">
+        # Python<br>
+        pip install -r requirements.txt<br>
+        python app.py<br><br>
+        # Docker<br>
+        docker build -t sentimentscope .<br>
+        docker run -p 7860:7860 sentimentscope<br><br>
+        # Docker Compose<br>
+        docker compose up --build
+      </div>
+
+      <div class="lbl" style="margin:20px 0 10px">File Structure</div>
+      <div class="formula-box">
+        sentimentscope/<br>
+        ├── app.py &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ← Gradio app + ML model<br>
+        ├── requirements.txt &nbsp; ← Python dependencies<br>
+        ├── Dockerfile &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ← Container definition<br>
+        ├── docker-compose.yml ← Local orchestration<br>
+        ├── .dockerignore &nbsp;&nbsp;&nbsp; ← Docker build exclusions<br>
+        ├── ui_preview.html &nbsp;&nbsp; ← This file<br>
+        └── README.md &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ← HF Spaces metadata
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<div class="footer">
+  Built with 🐍 scikit-learn &nbsp;·&nbsp; 🎨 Gradio &nbsp;·&nbsp; 🐳 Docker &nbsp;·&nbsp;
+  <a href="https://huggingface.co/spaces" target="_blank">🤗 HuggingFace Spaces</a>
+</div>
+
+<!-- ── JavaScript ─────────────────────────────────────────── -->
+<script>
+  // ── Sample data ─────────────────────────────────────────────
+  const EXAMPLES = [
+    "I absolutely love this product it is amazing",
+    "This is the worst experience of my life so disappointed",
+    "The package arrived on time nothing special really",
+    "Outstanding quality and superb customer service",
+    "It is okay does what it says on the box",
+    "Complete waste of money broken on arrival",
+    "Decent product for the price no complaints",
+    "Totally blown away best purchase ever made",
+  ];
+
+  // Simple keyword-based mock classifier (demo only)
+  function mockClassify(text) {
+    const t = text.toLowerCase();
+    const posWords = ['love','amazing','fantastic','excellent','outstanding','brilliant',
+                      'great','wonderful','perfect','superb','best','happy','incredible',
+                      'recommend','impressed','worth','blown away','thrilled'];
+    const negWords = ['terrible','worst','horrible','awful','waste','broken','garbage',
+                      'useless','scam','dreadful','disappointed','poor','damage','trash',
+                      'regret','never again','disgusting'];
+
+    let posScore = 0.05, negScore = 0.05;
+    posWords.forEach(w => { if(t.includes(w)) posScore += 0.25; });
+    negWords.forEach(w => { if(t.includes(w)) negScore += 0.25; });
+
+    posScore = Math.min(posScore, 0.97);
+    negScore = Math.min(negScore, 0.97);
+    let neuScore = Math.max(0.03, 1 - posScore - negScore);
+
+    // Normalise
+    const total = posScore + negScore + neuScore;
+    return {
+      positive: posScore/total,
+      neutral:  neuScore/total,
+      negative: negScore/total,
+    };
+  }
+
+  // ── Render examples ──────────────────────────────────────────
+  const exContainer = document.getElementById('examples');
+  EXAMPLES.forEach(ex => {
+    const el = document.createElement('div');
+    el.className = 'ex-chip';
+    el.textContent = ex;
+    el.onclick = () => {
+      document.getElementById('inputText').value = ex;
+      document.querySelectorAll('.ex-chip').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      analyse();
+    };
+    exContainer.appendChild(el);
+  });
+
+  // ── Analyse ──────────────────────────────────────────────────
+  const COLOR = { positive:'#10B981', neutral:'#F59E0B', negative:'#FF4B6E' };
+  const EMOJI = { positive:'😊', neutral:'😐', negative:'😠' };
+
+  function analyse() {
+    const text = document.getElementById('inputText').value.trim();
+    if (!text) return;
+
+    const scores  = mockClassify(text);
+    const entries = Object.entries(scores).sort((a,b) => b[1]-a[1]);
+    const [top, topScore] = entries[0];
+    const color = COLOR[top];
+    const emoji = EMOJI[top];
+
+    // Result card
+    document.getElementById('rEmoji').textContent = emoji;
+    document.getElementById('rLabel').textContent = top.charAt(0).toUpperCase()+top.slice(1);
+    document.getElementById('rLabel').style.color  = color;
+    document.getElementById('rConf').textContent   = (topScore*100).toFixed(1)+'%';
+    document.getElementById('rConf').style.color   = color;
+    document.getElementById('resultCard').style.borderColor  = color+'55';
+    document.getElementById('resultCard').style.boxShadow    = `0 0 28px ${color}22`;
+
+    // Score bars
+    const bars = document.getElementById('scoreBars');
+    bars.innerHTML = '';
+    ['positive','neutral','negative'].forEach(lbl => {
+      const pct = (scores[lbl]*100).toFixed(1);
+      bars.innerHTML += `
+        <div class="score-row">
+          <div class="score-hdr">
+            <span class="score-name">${EMOJI[lbl]} ${lbl.charAt(0).toUpperCase()+lbl.slice(1)}</span>
+            <span style="color:${COLOR[lbl]};font-weight:700">${pct}%</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${pct}%;background:${COLOR[lbl]}"></div>
+          </div>
+        </div>`;
+    });
+
+    // Conf widget
+    const confRows = document.getElementById('confRows');
+    confRows.innerHTML = '';
+    ['positive','neutral','negative'].forEach(lbl => {
+      const val = scores[lbl].toFixed(4);
+      const pct = (scores[lbl]*100).toFixed(1);
+      confRows.innerHTML += `
+        <div class="conf-row">
+          <span style="font-size:13px">${EMOJI[lbl]} ${lbl.charAt(0).toUpperCase()+lbl.slice(1)}</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="mini-bar">
+              <div class="mini-fill" style="width:${pct}%;background:${COLOR[lbl]}"></div>
+            </div>
+            <span style="font-size:12px;color:var(--muted);width:40px;text-align:right">${val}</span>
+          </div>
+        </div>`;
+    });
+
+    // Meta
+    document.getElementById('metaText').textContent   = text.slice(0,100)+(text.length>100?'...':'');
+    document.getElementById('metaResult').textContent = `${emoji} ${top.charAt(0).toUpperCase()+top.slice(1)} (${(topScore*100).toFixed(1)}%)`;
+  }
+
+  function clearAll() {
+    document.getElementById('inputText').value = '';
+    document.querySelectorAll('.ex-chip').forEach(c => c.classList.remove('selected'));
+  }
+
+  // ── Batch ─────────────────────────────────────────────────────
+  function runBatch() {
+    const lines = document.getElementById('batchInput').value
+      .split('\n').map(l=>l.trim()).filter(Boolean).slice(0,20);
+    const tbody = document.getElementById('batchBody');
+    tbody.innerHTML = '';
+
+    lines.forEach((line,i) => {
+      const scores = mockClassify(line);
+      const entries = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+      const [top,topScore] = entries[0];
+      const short = line.length>55 ? line.slice(0,55)+'...' : line;
+      const pillClass = {positive:'pill-pos',neutral:'pill-neu',negative:'pill-neg'}[top];
+
+      tbody.innerHTML += `
+        <tr>
+          <td style="color:var(--muted)">${i+1}</td>
+          <td>${short}</td>
+          <td><span class="pill ${pillClass}">${EMOJI[top]} ${top.charAt(0).toUpperCase()+top.slice(1)}</span></td>
+          <td style="color:${COLOR[top]};font-weight:700">${(topScore*100).toFixed(1)}%</td>
+        </tr>`;
+    });
+
+    if (!lines.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);padding:16px">⚠️ Enter some text above.</td></tr>';
+    }
+  }
+
+  // ── Tab switching ─────────────────────────────────────────────
+  function switchTab(name, el) {
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.getElementById('tab-'+name).classList.add('active');
+    el.classList.add('active');
+  }
+
+  // ── Init ──────────────────────────────────────────────────────
+  analyse();
+</script>
+</body>
+</html>
